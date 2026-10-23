@@ -1,0 +1,6 @@
+{
+  "name": "M K Enterprises - Applicant & Document Tracker",
+  "description": "Professional Bilingual (English + Marathi) Dashboard for M K Enterprises managing 61 applicants, document statuses, PDF tracking, payments, error reconciliation, and Excel reports.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
