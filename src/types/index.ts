@@ -76,6 +76,25 @@ export interface VendorPayment {
   status: VendorPaymentStatus;
 }
 
+export type VendorDocStatus = 'Received' | 'Pending' | 'Error';
+
+export interface VendorDocRate {
+  id: string;
+  nameEn: string;
+  nameMr: string;
+  rate: number;
+}
+
+export interface VendorDocument {
+  id: string;
+  vendorId: string;
+  applicantId: string;
+  rateId: string;
+  status: VendorDocStatus;
+  assignedDate: string;
+  receivedDate: string;
+}
+
 export interface MonthlyExpense {
   officeRent: number;
   electricity: number;

@@ -20,8 +20,16 @@
   .print-only {
     display: block !important;
   }
-  body.printing-receipt #root {
+  body.printing-receipt #root,
+  body.printing-ledger #root {
     display: none !important;
+  }
+  body.printing-ledger .vendor-ledger-print {
+    display: block !important;
+  }
+  @page {
+    size: A4;
+    margin: 12mm;
   }
   body.printing-receipt .receipt-modal-root {
     position: static !important;

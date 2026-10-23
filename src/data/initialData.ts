@@ -1,6 +1,43 @@
-import { AgencySettings, Applicant, MonthlyExpense, Vendor, VendorPayment } from '../types';
+import {
+  AgencySettings,
+  Applicant,
+  DocumentStatus,
+  MonthlyExpense,
+  Vendor,
+  VendorDocRate,
+  VendorDocStatus,
+  VendorDocument,
+  VendorPayment,
+} from '../types';
 
 export const PREMA_VENDOR_ID = 'vendor-prema-gaikwad';
+
+export const initialVendorDocRates: VendorDocRate[] = [
+  { id: 'aadhar', nameEn: 'Aadhar Processing', nameMr: 'आधार प्रक्रिया', rate: 50 },
+  { id: 'pan', nameEn: 'PAN Card', nameMr: 'पॅन कार्ड', rate: 100 },
+  { id: 'aadhar-update', nameEn: 'Aadhar Update', nameMr: 'आधार अपडेट', rate: 75 },
+  { id: 'aadhar-mobile', nameEn: 'Aadhar Mobile Link', nameMr: 'आधार मोबाईल लिंक', rate: 50 },
+];
+
+const mapApplicantStatus = (status: DocumentStatus): VendorDocStatus => {
+  if (status === 'Received') return 'Received';
+  if (status === 'Error Found') return 'Error';
+  return 'Pending';
+};
+
+export const buildInitialVendorDocuments = (applicants: Applicant[]): VendorDocument[] =>
+  applicants.map((a) => {
+    const status = mapApplicantStatus(a.aadharStatus);
+    return {
+      id: `vd-${a.id}`,
+      vendorId: PREMA_VENDOR_ID,
+      applicantId: a.id,
+      rateId: 'aadhar',
+      status,
+      assignedDate: a.applicationDate || '',
+      receivedDate: status === 'Received' ? a.completionDate || a.applicationDate || '' : '',
+    };
+  });
 
 export const initialVendors: Vendor[] = [
   {
