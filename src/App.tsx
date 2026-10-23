@@ -4,8 +4,38 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { AgencySettings, Applicant, DocumentStatus, DocumentType, LanguageMode } from './types';
-import { initialAgencySettings, initialApplicants } from './data/initialData';
+import {
+  AgencySettings,
+  Applicant,
+  DocumentStatus,
+  DocumentType,
+  LanguageMode,
+  MonthlyExpense,
+  VendorPayment,
+} from './types';
+import {
+  initialAgencySettings,
+  initialApplicants,
+  initialVendors,
+  initialVendorPayments,
+} from './data/initialData';
+import { VendorPayments } from './components/VendorPayments';
+import { ExpenseProfitCalculator } from './components/ExpenseProfitCalculator';
+import { RevenueDateRange } from './components/RevenueDateRange';
+
+// v3: operator & office details updated to Khandu Shankar Mhamane / Thergaon office
+const SETTINGS_KEY = 'mke_settings_v3';
+const VENDOR_PAYMENTS_KEY = 'mke_vendor_payments_v1';
+const EXPENSES_KEY = 'mke_monthly_expenses_v1';
+
+const loadJSON = <T,>(key: string, fallback: T): T => {
+  try {
+    const saved = localStorage.getItem(key);
+    return saved ? (JSON.parse(saved) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+};
 import { Header } from './components/Header';
 import { KPICards } from './components/KPICards';
 import { DocumentMatrix } from './components/DocumentMatrix';
@@ -43,7 +73,7 @@ export default function App() {
   });
 
   const [settings, setSettings] = useState<AgencySettings>(() => {
-    const saved = localStorage.getItem('mke_settings_v2');
+    const saved = localStorage.getItem(SETTINGS_KEY);
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -53,6 +83,28 @@ export default function App() {
     }
     return initialAgencySettings;
   });
+
+  const [vendorPayments, setVendorPayments] = useState<VendorPayment[]>(() =>
+    loadJSON(VENDOR_PAYMENTS_KEY, initialVendorPayments)
+  );
+  const [monthlyExpenses, setMonthlyExpenses] = useState<Record<string, MonthlyExpense>>(() =>
+    loadJSON(EXPENSES_KEY, {})
+  );
+
+  useEffect(() => {
+    localStorage.setItem(VENDOR_PAYMENTS_KEY, JSON.stringify(vendorPayments));
+  }, [vendorPayments]);
+
+  useEffect(() => {
+    localStorage.setItem(EXPENSES_KEY, JSON.stringify(monthlyExpenses));
+  }, [monthlyExpenses]);
+
+  const handleSaveVendorPayment = (payment: VendorPayment) => {
+    setVendorPayments((prev) =>
+      prev.some((p) => p.id === payment.id) ? prev.map((p) => (p.id === payment.id ? payment : p)) : [...prev, payment]
+    );
+    showToast(lang === 'en' ? 'Vendor payment saved.' : 'विक्रेता पेमेंट जतन केले.');
+  };
 
   const [lang, setLang] = useState<LanguageMode>(() => {
     const saved = localStorage.getItem('mke_lang');
@@ -83,7 +135,7 @@ export default function App() {
   }, [applicants]);
 
   useEffect(() => {
-    localStorage.setItem('mke_settings_v2', JSON.stringify(settings));
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
   }, [settings]);
 
   useEffect(() => {
@@ -273,7 +325,9 @@ export default function App() {
       setApplicants(initialApplicants);
       setSettings(initialAgencySettings);
       localStorage.removeItem('mke_applicants_v2');
-      localStorage.removeItem('mke_settings_v2');
+      localStorage.removeItem(SETTINGS_KEY);
+      setVendorPayments(initialVendorPayments);
+      setMonthlyExpenses({});
       showToast(lang === 'en' ? 'Reset to 61 original verified records.' : 'मूळ ६१ रेकॉर्ड्स पूर्ववत केले.');
     }
   };
@@ -322,6 +376,7 @@ export default function App() {
 
       {/* Header */}
       <Header
+        settings={settings}
         lang={lang}
         setLang={setLang}
         activeTab={activeTab}
@@ -401,6 +456,8 @@ export default function App() {
               onOpenAudit={() => setIsAuditModalOpen(true)}
             />
 
+            <RevenueDateRange lang={lang} applicants={applicants} />
+
             {/* Weekly Revenue Trends Chart (Recharts) */}
             <RevenueTrendsChart
               lang={lang}
@@ -477,6 +534,7 @@ export default function App() {
                 </h3>
               </div>
               <ApplicantTable
+                settings={settings}
                 lang={lang}
                 applicants={applicants}
                 onEditApplicant={(app) => {
@@ -514,6 +572,7 @@ export default function App() {
             </div>
 
             <ApplicantTable
+              settings={settings}
               lang={lang}
               applicants={applicants}
               onEditApplicant={(app) => {
@@ -584,6 +643,26 @@ export default function App() {
           </div>
         )}
 
+        {activeTab === 'vendors' && (
+          <VendorPayments
+            lang={lang}
+            vendors={initialVendors}
+            payments={vendorPayments}
+            onSavePayment={handleSaveVendorPayment}
+            onDeletePayment={(id) => setVendorPayments((prev) => prev.filter((p) => p.id !== id))}
+          />
+        )}
+
+        {activeTab === 'profit' && (
+          <ExpenseProfitCalculator
+            lang={lang}
+            applicants={applicants}
+            vendorPayments={vendorPayments}
+            expenses={monthlyExpenses}
+            onChangeExpense={(month, expense) => setMonthlyExpenses((prev) => ({ ...prev, [month]: expense }))}
+          />
+        )}
+
         {/* Settings Tab */}
         {activeTab === 'settings' && (
           <div className="bg-white rounded-xl p-6 border border-slate-200 max-w-3xl space-y-6">
@@ -609,17 +688,40 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 py-4 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-between gap-4 text-xs text-slate-500">
-          <div>
-            <span>© 2024–2026 M K Enterprises (एम के एंटरप्रायझेस). All rights reserved.</span>
+      <footer className="bg-white border-t border-slate-200 py-5 mt-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-slate-500">
+          <div className="space-y-0.5">
+            <p className="font-bold text-slate-900 text-sm">{settings.agencyName}</p>
+            <p>{settings.agencyNameMr}</p>
+            <p>Operator: <span className="font-medium text-slate-700">{settings.operatorName}</span></p>
           </div>
-          <div className="flex items-center gap-4">
-            <span>Reg: {settings.regNumber}</span>
-            <span aria-hidden="true">·</span>
-            <span>Operator: {settings.operatorName}</span>
-            <span aria-hidden="true">·</span>
-            <span>61 Applicants Verified</span>
+          <address className="not-italic space-y-0.5">
+            <p>{settings.address}</p>
+            <p>
+              Mobile:{' '}
+              <a href={`tel:${settings.phone.replace(/\s/g, '')}`} className="font-medium text-slate-700 hover:underline">
+                {settings.phone}
+              </a>
+            </p>
+            <p className="flex flex-wrap gap-x-1">
+              Email:
+              {settings.email
+                .split('/')
+                .map((e) => e.trim())
+                .filter(Boolean)
+                .map((e, i, arr) => (
+                  <span key={e}>
+                    <a href={`mailto:${e}`} className="font-medium text-slate-700 hover:underline">
+                      {e}
+                    </a>
+                    {i < arr.length - 1 && ' /'}
+                  </span>
+                ))}
+            </p>
+          </address>
+          <div className="md:text-right space-y-0.5">
+            <p>Reg: {settings.regNumber}</p>
+            <p>© 2024–2026 {settings.agencyName}. All rights reserved.</p>
           </div>
         </div>
       </footer>

@@ -15,10 +15,27 @@ import {
   ChevronDown,
   ArrowUpDown,
   ExternalLink,
+  MessageCircle,
 } from 'lucide-react';
+import { AgencySettings } from '../types';
+import { buildApplicantWhatsAppMessage, openWhatsApp } from '../utils/whatsapp';
+
+type AppTypeFilter = 'all' | DocumentType;
+type WorkStatusFilter = 'all' | 'pending' | 'completed';
+
+const docStatuses = (app: Applicant) =>
+  [app.incomeStatus, app.domicileStatus, app.aadharStatus, app.rationStatus, app.casteStatus].filter(
+    (s) => s !== 'None'
+  );
+
+const isCompleted = (app: Applicant) => {
+  const s = docStatuses(app);
+  return s.length > 0 && s.every((x) => x === 'Received');
+};
 
 interface ApplicantTableProps {
   lang: LanguageMode;
+  settings: AgencySettings;
   applicants: Applicant[];
   onEditApplicant: (applicant: Applicant) => void;
   onPrintReceipt: (applicant: Applicant) => void;
@@ -30,6 +47,7 @@ interface ApplicantTableProps {
 
 export const ApplicantTable: React.FC<ApplicantTableProps> = ({
   lang,
+  settings,
   applicants,
   onEditApplicant,
   onPrintReceipt,
@@ -39,6 +57,8 @@ export const ApplicantTable: React.FC<ApplicantTableProps> = ({
   onClearFilterPreset,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [appType, setAppType] = useState<AppTypeFilter>('all');
+  const [workStatus, setWorkStatus] = useState<WorkStatusFilter>('all');
   const [selectedFilter, setSelectedFilter] = useState<string>(filterPreset);
   const [sortField, setSortField] = useState<'receiptNo' | 'nameEn' | 'date' | 'totalFee' | 'balance'>('receiptNo');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
@@ -78,6 +98,10 @@ export const ApplicantTable: React.FC<ApplicantTableProps> = ({
         app.rationPdf.toLowerCase().includes(searchQuery.toLowerCase());
 
       if (!matchesSearch) return false;
+
+      if (appType !== 'all' && app[`${appType}Status` as const] === 'None') return false;
+      if (workStatus === 'completed' && !isCompleted(app)) return false;
+      if (workStatus === 'pending' && isCompleted(app)) return false;
 
       // Segmented Tabs
       if (selectedFilter === 'all') return true;
@@ -143,7 +167,7 @@ export const ApplicantTable: React.FC<ApplicantTableProps> = ({
 
       return true;
     });
-  }, [applicants, searchQuery, selectedFilter]);
+  }, [applicants, searchQuery, selectedFilter, appType, workStatus]);
 
   // Sorting
   const sortedApplicants = useMemo(() => {
@@ -208,7 +232,7 @@ export const ApplicantTable: React.FC<ApplicantTableProps> = ({
               type="text"
               placeholder={
                 lang === 'en'
-                  ? 'Search by Name, Receipt No, Phone, or PDF #...'
+                  ? 'Search by Name, Mobile, Receipt No, or PDF #...'
                   : lang === 'mr'
                   ? 'नाव, पावती क्र., मोबाईल किंवा PDF नंबर शोधा...'
                   : 'Search by Name, Receipt No, PDF / नाव, पावती क्र. शोधा...'
@@ -226,6 +250,66 @@ export const ApplicantTable: React.FC<ApplicantTableProps> = ({
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600"
               >
                 ✕
+              </button>
+            )}
+          </div>
+
+          {/* Application Type & Work Status filters */}
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <label className="flex items-center gap-1.5 text-slate-600 font-medium">
+              <Filter className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
+              <span className="sr-only">Application Type</span>
+              <select
+                value={appType}
+                onChange={(e) => {
+                  setAppType(e.target.value as AppTypeFilter);
+                  setPage(1);
+                }}
+                className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-400"
+              >
+                <option value="all">{lang === 'mr' ? 'सर्व अर्ज प्रकार' : 'All Application Types'}</option>
+                <option value="income">Income / उत्पन्न</option>
+                <option value="domicile">Domicile / अधिवास</option>
+                <option value="aadhar">Aadhar / आधार</option>
+                <option value="ration">Ration / रेशन</option>
+                <option value="caste">Caste / जात</option>
+              </select>
+            </label>
+            <div className="flex bg-white border border-slate-200 rounded-lg p-0.5" role="radiogroup" aria-label="Work status">
+              {(
+                [
+                  ['all', lang === 'mr' ? 'सर्व' : 'All'],
+                  ['pending', lang === 'mr' ? 'प्रलंबित' : 'Pending'],
+                  ['completed', lang === 'mr' ? 'पूर्ण' : 'Completed'],
+                ] as [WorkStatusFilter, string][]
+              ).map(([v, label]) => (
+                <button
+                  key={v}
+                  role="radio"
+                  aria-checked={workStatus === v}
+                  onClick={() => {
+                    setWorkStatus(v);
+                    setPage(1);
+                  }}
+                  className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
+                    workStatus === v ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {(appType !== 'all' || workStatus !== 'all' || searchQuery) && (
+              <button
+                onClick={() => {
+                  setAppType('all');
+                  setWorkStatus('all');
+                  setSearchQuery('');
+                  setPage(1);
+                }}
+                className="text-blue-600 hover:underline"
+              >
+                {lang === 'mr' ? 'फिल्टर काढा' : 'Clear'}
               </button>
             )}
           </div>
@@ -675,6 +759,16 @@ export const ApplicantTable: React.FC<ApplicantTableProps> = ({
                     {/* Actions */}
                     <td className="py-3 px-3 text-right whitespace-nowrap">
                       <div className="flex items-center justify-end gap-1.5">
+                        {app.balance > 0 && (
+                          <button
+                            onClick={() => openWhatsApp(app.phone, buildApplicantWhatsAppMessage(app, settings))}
+                            className="flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-white bg-[#1f9d55] rounded hover:bg-[#188046] transition-colors"
+                            title="Send balance reminder on WhatsApp"
+                          >
+                            <MessageCircle className="w-3 h-3" aria-hidden="true" />
+                            {lang === 'en' ? 'Remind' : 'आठवण'}
+                          </button>
+                        )}
                         {app.balance > 0 && (
                           <button
                             onClick={() => onQuickPay(app.id)}
