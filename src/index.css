@@ -20,6 +20,23 @@
   .print-only {
     display: block !important;
   }
+  body.printing-receipt #root {
+    display: none !important;
+  }
+  body.printing-receipt .receipt-modal-root {
+    position: static !important;
+    background: none !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+  body.printing-receipt .receipt-modal-root > div {
+    max-width: none !important;
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
 }
 
 /* Hide scrollbar for clean UI */

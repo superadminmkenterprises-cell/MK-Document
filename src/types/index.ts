@@ -56,6 +56,33 @@ export interface AgencySettings {
   rates: Record<DocumentType, DocumentRateConfig>;
 }
 
+export type VendorPaymentStatus = 'Paid' | 'Pending';
+
+export interface Vendor {
+  id: string;
+  nameEn: string;
+  nameMr: string;
+  office: string;
+  phone: string;
+}
+
+export interface VendorPayment {
+  id: string;
+  vendorId: string;
+  paymentDate: string; // YYYY-MM-DD
+  description: string;
+  amountPaid: number;
+  pendingAmount: number;
+  status: VendorPaymentStatus;
+}
+
+export interface MonthlyExpense {
+  officeRent: number;
+  electricity: number;
+  operatorSalary: number;
+  other: number;
+}
+
 export interface DashboardSummary {
   totalApplicants: number;
   totalFee: number;

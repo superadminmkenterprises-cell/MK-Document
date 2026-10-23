@@ -1,15 +1,55 @@
-import { AgencySettings, Applicant } from '../types';
+import { AgencySettings, Applicant, MonthlyExpense, Vendor, VendorPayment } from '../types';
+
+export const PREMA_VENDOR_ID = 'vendor-prema-gaikwad';
+
+export const initialVendors: Vendor[] = [
+  {
+    id: PREMA_VENDOR_ID,
+    nameEn: 'Prema Gaikwad',
+    nameMr: 'प्रेमा गायकवाड',
+    office: 'Aadhar Office',
+    phone: '+91 92214 57617',
+  },
+];
+
+export const initialVendorPayments: VendorPayment[] = [
+  {
+    id: 'vp-001',
+    vendorId: PREMA_VENDOR_ID,
+    paymentDate: '2024-08-10',
+    description: 'Aadhar update processing (batch 1)',
+    amountPaid: 2000,
+    pendingAmount: 0,
+    status: 'Paid',
+  },
+  {
+    id: 'vp-002',
+    vendorId: PREMA_VENDOR_ID,
+    paymentDate: '2024-08-24',
+    description: 'Aadhar enrolment processing (batch 2)',
+    amountPaid: 1000,
+    pendingAmount: 1000,
+    status: 'Pending',
+  },
+];
+
+export const defaultMonthlyExpense: MonthlyExpense = {
+  officeRent: 10000,
+  electricity: 2000,
+  operatorSalary: 15000,
+  other: 0,
+};
 
 export const initialAgencySettings: AgencySettings = {
-  agencyName: 'M K Enterprises',
+  agencyName: 'M K ENTERPRISES',
   agencyNameMr: 'एम के एंटरप्रायझेस',
   tagline: 'CSC & Document Facilitation Center',
   taglineMr: 'महा-ई-सेवा व शासकीय कागदपत्र सुविधा केंद्र',
-  operatorName: 'Sachin Kadam / सचिन कदम',
-  phone: '+91 98220 12345',
-  email: 'superadminmkenterprises@gmail.com',
-  address: 'Shop No. 4, Grampanchayat Complex, Station Road, Dist. Pune / Satara',
-  addressMr: 'दुकान क्र. ४, ग्रामपंचायत संकुल, स्टेशन रोड, जि. पुणे / सातारा',
+  operatorName: 'Khandu Shankar Mhamane / खंडू शंकर म्हमाणे',
+  phone: '+91 93593 62679',
+  email: 'mkenterprise1028@gmail.com / superadminmkenterprises@gmail.com',
+  address: 'Shop No. 08, 1st Floor, ABC Nirman Building, Gujarnagar, Thergaon, Pune – 411033',
+  addressMr: 'दुकान क्र. ०८, पहिला मजला, एबीसी निर्माण बिल्डिंग, गुजरनगर, थेरगाव, पुणे – ४११०३३',
   regNumber: 'CSC-MH-2023-88912',
   rates: {
     aadhar: {

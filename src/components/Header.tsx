@@ -1,8 +1,24 @@
 import React from 'react';
 import { LanguageMode } from '../types';
-import { Plus, Download, Upload, Printer, RefreshCw } from 'lucide-react';
+import { AgencySettings } from '../types';
+import { Plus, Download, Upload, Printer, RefreshCw, Phone, Mail, MapPin, User } from 'lucide-react';
+
+const extraTabs = [
+  { id: 'vendors', en: 'Vendors', mr: 'विक्रेता खर्च', dual: 'Vendors / विक्रेते' },
+  { id: 'profit', en: 'Expenses & Profit', mr: 'खर्च व नफा', dual: 'Profit / नफा' },
+];
+
+const mobileTabs = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'applicants', label: 'Applicants' },
+  { id: 'documents', label: 'Documents' },
+  { id: 'vendors', label: 'Vendors' },
+  { id: 'profit', label: 'Profit' },
+  { id: 'settings', label: 'Settings' },
+];
 
 interface HeaderProps {
+  settings: AgencySettings;
   lang: LanguageMode;
   setLang: (lang: LanguageMode) => void;
   activeTab: string;
@@ -17,6 +33,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({
+  settings,
   lang,
   setLang,
   activeTab,
@@ -109,6 +126,19 @@ export const Header: React.FC<HeaderProps> = ({
           >
             {lang === 'en' ? 'Rates & Settings' : lang === 'mr' ? 'दर व सेटिंग्ज' : 'Rates / दर सेटिंग'}
           </button>
+          {extraTabs.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setActiveTab(t.id)}
+              className={`transition-colors whitespace-nowrap shrink-0 pb-1 border-b-2 ${
+                activeTab === t.id
+                  ? 'border-slate-900 text-slate-900 font-semibold'
+                  : 'border-transparent hover:text-slate-900'
+              }`}
+            >
+              {lang === 'en' ? t.en : lang === 'mr' ? t.mr : t.dual}
+            </button>
+          ))}
         </nav>
 
         {/* Zone 3: Language toggle & Primary Action */}
@@ -154,16 +184,36 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
+      <nav className="lg:hidden flex gap-1 overflow-x-auto scrollbar-none px-4 pb-2 text-xs" aria-label="Sections">
+        {mobileTabs.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setActiveTab(t.id)}
+            className={`px-3 py-1.5 rounded-md whitespace-nowrap font-medium ${
+              activeTab === t.id ? 'bg-slate-900 text-white' : 'text-slate-600 bg-slate-100'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </nav>
+
       {/* Secondary Quick Action Utility Bar */}
       <div className="bg-slate-50 border-t border-slate-200/80 px-4 sm:px-6 lg:px-8 py-2">
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3 text-xs">
           {/* Quick Context & Active Filter indicator */}
-          <div className="flex items-center gap-3 text-slate-500">
-            <span className="font-semibold text-slate-700">M K Enterprises</span>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-slate-500">
+            <span className="font-semibold text-slate-700">{settings.agencyName}</span>
             <span aria-hidden="true">·</span>
-            <span>Reg: CSC-MH-2023-88912</span>
+            <span className="flex items-center gap-1">
+              <User className="w-3 h-3" aria-hidden="true" />
+              {settings.operatorName}
+            </span>
             <span aria-hidden="true">·</span>
-            <span>Desk: superadminmkenterprises@gmail.com</span>
+            <a href={`tel:${settings.phone.replace(/\s/g, '')}`} className="flex items-center gap-1 hover:text-slate-800">
+              <Phone className="w-3 h-3" aria-hidden="true" />
+              {settings.phone}
+            </a>
           </div>
 
           {/* Export & Print actions */}
