@@ -32,8 +32,8 @@ import { RevenueDateRange } from './components/RevenueDateRange';
 const SETTINGS_KEY = 'mke_settings_v3';
 const VENDOR_PAYMENTS_KEY = 'mke_vendor_payments_v1';
 const EXPENSES_KEY = 'mke_monthly_expenses_v1';
-const VENDOR_DOC_RATES_KEY = 'mke_vendor_doc_rates_v1';
-const VENDOR_DOCS_KEY = 'mke_vendor_documents_v1';
+const VENDOR_DOC_RATES_KEY = 'mke_vendor_doc_rates_v2';
+const VENDOR_DOCS_KEY = 'mke_vendor_documents_v2';
 
 const loadJSON = <T,>(key: string, fallback: T): T => {
   try {

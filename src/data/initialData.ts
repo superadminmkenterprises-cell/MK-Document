@@ -13,10 +13,11 @@ import {
 export const PREMA_VENDOR_ID = 'vendor-prema-gaikwad';
 
 export const initialVendorDocRates: VendorDocRate[] = [
-  { id: 'aadhar', nameEn: 'Aadhar Processing', nameMr: 'आधार प्रक्रिया', rate: 50 },
-  { id: 'pan', nameEn: 'PAN Card', nameMr: 'पॅन कार्ड', rate: 100 },
-  { id: 'aadhar-update', nameEn: 'Aadhar Update', nameMr: 'आधार अपडेट', rate: 75 },
-  { id: 'aadhar-mobile', nameEn: 'Aadhar Mobile Link', nameMr: 'आधार मोबाईल लिंक', rate: 50 },
+  { id: 'aadhar', nameEn: 'Aadhar', nameMr: 'आधार', rate: 1000 },
+  { id: 'income', nameEn: 'Income Certificate', nameMr: 'उत्पन्न दाखला', rate: 1000 },
+  { id: 'ration', nameEn: 'Ration Card', nameMr: 'रेशन कार्ड', rate: 3000 },
+  { id: 'domicile', nameEn: 'Domicile', nameMr: 'अधिवास दाखला', rate: 4000 },
+  { id: 'caste', nameEn: 'Caste Certificate', nameMr: 'जात प्रमाणपत्र', rate: 20000 },
 ];
 
 const mapApplicantStatus = (status: DocumentStatus): VendorDocStatus => {
@@ -25,19 +26,29 @@ const mapApplicantStatus = (status: DocumentStatus): VendorDocStatus => {
   return 'Pending';
 };
 
+const APPLICANT_DOC_FIELDS = [
+  ['aadhar', 'aadharStatus'],
+  ['income', 'incomeStatus'],
+  ['ration', 'rationStatus'],
+  ['domicile', 'domicileStatus'],
+  ['caste', 'casteStatus'],
+] as const;
+
 export const buildInitialVendorDocuments = (applicants: Applicant[]): VendorDocument[] =>
-  applicants.map((a) => {
-    const status = mapApplicantStatus(a.aadharStatus);
-    return {
-      id: `vd-${a.id}`,
-      vendorId: PREMA_VENDOR_ID,
-      applicantId: a.id,
-      rateId: 'aadhar',
-      status,
-      assignedDate: a.applicationDate || '',
-      receivedDate: status === 'Received' ? a.completionDate || a.applicationDate || '' : '',
-    };
-  });
+  applicants.flatMap((a) =>
+    APPLICANT_DOC_FIELDS.filter(([, field]) => a[field] !== 'None').map(([rateId, field]) => {
+      const status = mapApplicantStatus(a[field]);
+      return {
+        id: `vd-${a.id}-${rateId}`,
+        vendorId: PREMA_VENDOR_ID,
+        applicantId: a.id,
+        rateId,
+        status,
+        assignedDate: a.applicationDate || '',
+        receivedDate: status === 'Received' ? a.completionDate || a.applicationDate || '' : '',
+      };
+    })
+  );
 
 export const initialVendors: Vendor[] = [
   {

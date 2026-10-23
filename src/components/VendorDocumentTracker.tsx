@@ -9,8 +9,9 @@ import {
   VendorDocStatus,
   VendorDocument,
 } from '../types';
-import { formatINR } from '../utils/whatsapp';
+import { formatINR, openWhatsApp } from '../utils/whatsapp';
 import {
+  MessageCircle,
   FileStack,
   FileCheck2,
   Hourglass,
@@ -282,7 +283,39 @@ export const VendorDocumentTracker: React.FC<VendorDocumentTrackerProps> = ({
             )}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              const lines = rateBreakdown
+                .filter((r) => r.received > 0)
+                .map((r) => `• ${r.nameEn} (${r.nameMr}): ${r.received} × ${formatINR(r.rate)} = ${formatINR(r.amount)}`);
+              const message = [
+                `*${settings.agencyName} – Vendor Statement*`,
+                `${vendor.nameEn} (${vendor.office})`,
+                `Date: ${formatDate(today())}`,
+                '',
+                `Total Assigned (एकूण दिलेले): ${summary.assigned}`,
+                `Received (प्राप्त): ${summary.received}`,
+                `Pending (प्रलंबित): ${summary.pending}`,
+                `Error (त्रुटी): ${summary.error}`,
+                '',
+                '*Received documents breakdown:*',
+                ...(lines.length ? lines : ['No received documents yet']),
+                '',
+                `*Total Payable (एकूण द्यायची रक्कम): ${formatINR(summary.billable)}*`,
+                `Paid (दिलेली रक्कम): ${formatINR(summary.paid)}`,
+                `*Balance (बाकी रक्कम): ${formatINR(summary.balance)}*`,
+                '',
+                `– ${settings.operatorName}, ${settings.phone}`,
+              ].join('\n');
+              openWhatsApp(vendor.phone, message);
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-700"
+          >
+            <MessageCircle className="w-3.5 h-3.5" aria-hidden="true" />
+            {L('WhatsApp Summary', 'WhatsApp सारांश')}
+          </button>
           <button
             type="button"
             onClick={handleExportCSV}
