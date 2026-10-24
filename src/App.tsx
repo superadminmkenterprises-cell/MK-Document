@@ -12,14 +12,19 @@ import {
   LanguageMode,
   MonthlyExpense,
   VendorPayment,
+  VendorDocRate,
+  VendorDocument,
 } from './types';
 import {
   initialAgencySettings,
   initialApplicants,
   initialVendors,
   initialVendorPayments,
+  initialVendorDocRates,
+  buildInitialVendorDocuments,
 } from './data/initialData';
 import { VendorPayments } from './components/VendorPayments';
+import { VendorDocumentTracker } from './components/VendorDocumentTracker';
 import { ExpenseProfitCalculator } from './components/ExpenseProfitCalculator';
 import { RevenueDateRange } from './components/RevenueDateRange';
 
@@ -27,6 +32,8 @@ import { RevenueDateRange } from './components/RevenueDateRange';
 const SETTINGS_KEY = 'mke_settings_v3';
 const VENDOR_PAYMENTS_KEY = 'mke_vendor_payments_v1';
 const EXPENSES_KEY = 'mke_monthly_expenses_v1';
+const VENDOR_DOC_RATES_KEY = 'mke_vendor_doc_rates_v2';
+const VENDOR_DOCS_KEY = 'mke_vendor_documents_v2';
 
 const loadJSON = <T,>(key: string, fallback: T): T => {
   try {
@@ -90,6 +97,21 @@ export default function App() {
   const [monthlyExpenses, setMonthlyExpenses] = useState<Record<string, MonthlyExpense>>(() =>
     loadJSON(EXPENSES_KEY, {})
   );
+
+  const [vendorDocRates, setVendorDocRates] = useState<VendorDocRate[]>(() =>
+    loadJSON(VENDOR_DOC_RATES_KEY, initialVendorDocRates)
+  );
+  const [vendorDocuments, setVendorDocuments] = useState<VendorDocument[]>(() =>
+    loadJSON(VENDOR_DOCS_KEY, buildInitialVendorDocuments(initialApplicants))
+  );
+
+  useEffect(() => {
+    localStorage.setItem(VENDOR_DOC_RATES_KEY, JSON.stringify(vendorDocRates));
+  }, [vendorDocRates]);
+
+  useEffect(() => {
+    localStorage.setItem(VENDOR_DOCS_KEY, JSON.stringify(vendorDocuments));
+  }, [vendorDocuments]);
 
   useEffect(() => {
     localStorage.setItem(VENDOR_PAYMENTS_KEY, JSON.stringify(vendorPayments));
@@ -327,6 +349,8 @@ export default function App() {
       localStorage.removeItem('mke_applicants_v2');
       localStorage.removeItem(SETTINGS_KEY);
       setVendorPayments(initialVendorPayments);
+      setVendorDocRates(initialVendorDocRates);
+      setVendorDocuments(buildInitialVendorDocuments(initialApplicants));
       setMonthlyExpenses({});
       showToast(lang === 'en' ? 'Reset to 61 original verified records.' : 'मूळ ६१ रेकॉर्ड्स पूर्ववत केले.');
     }
@@ -644,13 +668,28 @@ export default function App() {
         )}
 
         {activeTab === 'vendors' && (
-          <VendorPayments
-            lang={lang}
-            vendors={initialVendors}
-            payments={vendorPayments}
-            onSavePayment={handleSaveVendorPayment}
-            onDeletePayment={(id) => setVendorPayments((prev) => prev.filter((p) => p.id !== id))}
-          />
+          <div className="space-y-10">
+            <VendorDocumentTracker
+              lang={lang}
+              vendor={initialVendors[0]}
+              settings={settings}
+              applicants={applicants}
+              rates={vendorDocRates}
+              documents={vendorDocuments}
+              totalPaid={vendorPayments
+                .filter((p) => p.vendorId === initialVendors[0].id)
+                .reduce((sum, p) => sum + p.amountPaid, 0)}
+              onChangeRates={setVendorDocRates}
+              onChangeDocuments={setVendorDocuments}
+            />
+            <VendorPayments
+              lang={lang}
+              vendors={initialVendors}
+              payments={vendorPayments}
+              onSavePayment={handleSaveVendorPayment}
+              onDeletePayment={(id) => setVendorPayments((prev) => prev.filter((p) => p.id !== id))}
+            />
+          </div>
         )}
 
         {activeTab === 'profit' && (

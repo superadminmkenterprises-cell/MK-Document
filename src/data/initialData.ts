@@ -1,6 +1,54 @@
-import { AgencySettings, Applicant, MonthlyExpense, Vendor, VendorPayment } from '../types';
+import {
+  AgencySettings,
+  Applicant,
+  DocumentStatus,
+  MonthlyExpense,
+  Vendor,
+  VendorDocRate,
+  VendorDocStatus,
+  VendorDocument,
+  VendorPayment,
+} from '../types';
 
 export const PREMA_VENDOR_ID = 'vendor-prema-gaikwad';
+
+export const initialVendorDocRates: VendorDocRate[] = [
+  { id: 'aadhar', nameEn: 'Aadhar', nameMr: 'आधार', rate: 1000 },
+  { id: 'income', nameEn: 'Income Certificate', nameMr: 'उत्पन्न दाखला', rate: 1000 },
+  { id: 'ration', nameEn: 'Ration Card', nameMr: 'रेशन कार्ड', rate: 3000 },
+  { id: 'domicile', nameEn: 'Domicile', nameMr: 'अधिवास दाखला', rate: 4000 },
+  { id: 'caste', nameEn: 'Caste Certificate', nameMr: 'जात प्रमाणपत्र', rate: 20000 },
+];
+
+const mapApplicantStatus = (status: DocumentStatus): VendorDocStatus => {
+  if (status === 'Received') return 'Received';
+  if (status === 'Error Found') return 'Error';
+  return 'Pending';
+};
+
+const APPLICANT_DOC_FIELDS = [
+  ['aadhar', 'aadharStatus'],
+  ['income', 'incomeStatus'],
+  ['ration', 'rationStatus'],
+  ['domicile', 'domicileStatus'],
+  ['caste', 'casteStatus'],
+] as const;
+
+export const buildInitialVendorDocuments = (applicants: Applicant[]): VendorDocument[] =>
+  applicants.flatMap((a) =>
+    APPLICANT_DOC_FIELDS.filter(([, field]) => a[field] !== 'None').map(([rateId, field]) => {
+      const status = mapApplicantStatus(a[field]);
+      return {
+        id: `vd-${a.id}-${rateId}`,
+        vendorId: PREMA_VENDOR_ID,
+        applicantId: a.id,
+        rateId,
+        status,
+        assignedDate: a.applicationDate || '',
+        receivedDate: status === 'Received' ? a.completionDate || a.applicationDate || '' : '',
+      };
+    })
+  );
 
 export const initialVendors: Vendor[] = [
   {
